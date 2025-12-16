@@ -11,6 +11,7 @@ class Settings(BaseSettings):
     alembic_database_url: str = Field(default="", alias="ALEMBIC_DATABASE_URL")
 
     cors_origins: str = Field(default="", alias="CORS_ORIGINS")
+    cors_origin_regex: str = Field(default="", alias="CORS_ORIGIN_REGEX")
     log_level: str = Field(default="info", alias="LOG_LEVEL")
 
     promo_limits_enabled: bool = Field(default=True, alias="PROMO_LIMITS_ENABLED")

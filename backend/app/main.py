@@ -34,10 +34,12 @@ def create_app() -> FastAPI:
     app = FastAPI(title="Tic-Tac-Toe API", version="1.0.0", lifespan=lifespan)
 
     origins = [o.strip() for o in settings.cors_origins.split(",") if o.strip()]
-    if origins:
+    origin_regex = settings.cors_origin_regex.strip() or None
+    if origins or origin_regex:
         app.add_middleware(
             CORSMiddleware,
             allow_origins=origins,
+            allow_origin_regex=origin_regex,
             allow_credentials=True,
             allow_methods=["*"],
             allow_headers=["*"],

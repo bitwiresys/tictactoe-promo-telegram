@@ -36,7 +36,10 @@ def _client_ip(request: Request) -> str:
         return forwarded.split(",")[0].strip()
     if request.client is None:
         return ""
-    return request.client.host
+    host = request.client.host
+    if host in {"127.0.0.1", "::1"}:
+        return ""
+    return host
 
 
 @router.post("", response_model=GameStateResponse, status_code=status.HTTP_201_CREATED)

@@ -27,3 +27,5 @@ Thumbs.db
 *.log
 *.sqlite
 *.sqlite3
+ssh_exec.py
+scp_exec.py
