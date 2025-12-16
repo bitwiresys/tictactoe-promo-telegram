@@ -19,6 +19,7 @@ backend/dist/
 frontend/node_modules/
 frontend/dist/
 frontend/.vite/
+.safety-project.ini
 .DS_Store
 Thumbs.db
 .idea/
