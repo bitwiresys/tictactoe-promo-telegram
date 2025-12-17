@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import random
 import uuid
 from datetime import datetime, timezone
 from typing import cast
@@ -28,6 +29,21 @@ from app.services.promo import acquire_promo_locks, issue_promo_code, promo_is_a
 from app.settings import get_settings
 
 router = APIRouter()
+
+
+def _computer_move_with_mistake(board: str, computer_symbol: Symbol, player_symbol: Symbol) -> int | None:
+    best = best_computer_move(board, computer_symbol, player_symbol)
+    if best is None:
+        return None
+
+    if random.random() >= 0.25:
+        return best
+
+    legal = [i for i, c in enumerate(board) if c == "."]
+    alternatives = [m for m in legal if m != best]
+    if not alternatives:
+        return best
+    return random.choice(alternatives)
 
 
 def _client_ip(request: Request) -> str:
@@ -66,7 +82,7 @@ async def create_game(
     )
 
     if game.next_turn == Turn.computer:
-        cm = best_computer_move(
+        cm = _computer_move_with_mistake(
             game.board,
             cast(Symbol, game.computer_symbol),
             cast(Symbol, game.player_symbol),
@@ -165,7 +181,7 @@ async def make_move(
         elif is_draw(game.board):
             game.status = GameStatus.draw
         else:
-            cm = best_computer_move(
+            cm = _computer_move_with_mistake(
                 game.board,
                 cast(Symbol, game.computer_symbol),
                 cast(Symbol, game.player_symbol),
