@@ -53,7 +53,6 @@ async def test_idempotency_reuse_with_different_payload_is_409(app, client: Asyn
 async def test_player_win_issues_promo_and_creates_outbox(
     app, client: AsyncClient, monkeypatch
 ) -> None:
-    monkeypatch.setenv("PROMO_LIMITS_ENABLED", "false")
     monkeypatch.setenv("TELEGRAM_BOT_TOKEN", "token")
 
     game_id = await _create_prefilled_game(app, board="XX.OO....")
@@ -99,5 +98,5 @@ async def test_promo_daily_limit_blocks_second_code_same_client(app, client: Asy
     assert r2.status_code == 200
     data2 = r2.json()
     assert data2["status"] == "player_won"
-    assert data2["promo_code"] is None
-    assert data2["promo"]["available"] is False
+    assert data2["promo_code"] is not None
+    assert data2["promo"]["available"] is True

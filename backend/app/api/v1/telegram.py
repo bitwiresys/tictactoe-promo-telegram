@@ -67,7 +67,7 @@ async def telegram_webhook(
         session,
         dedupe_key=dedupe_key,
         chat_id=chat_id,
-        text="Привет! Игра запущена. Открой мини‑приложение и сыграй в крестики‑нолики.",
+        text="Привет! Игра запущена. Открой мини-приложение и сыграй в крестики-нолики.",
         metadata={"command": "start"},
     )
 

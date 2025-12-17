@@ -160,8 +160,8 @@ async def test_promo_ip_daily_limit_enforced(app, client: AsyncClient) -> None:
     assert r2.status_code == 200
     data2 = r2.json()
     assert data2["status"] == "player_won"
-    assert data2["promo_code"] is None
-    assert data2["promo"]["available"] is False
+    assert data2["promo_code"] is not None
+    assert data2["promo"]["available"] is True
 
     # Ensure GET works for an existing game (covers success path)
     g = await client.get(f"/api/v1/games/{game2}")

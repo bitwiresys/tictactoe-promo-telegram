@@ -12,13 +12,13 @@ __pycache__/
 htmlcov/
 backend/.venv/
 backend/venv/
-backend/.venv/
 backend/*.egg-info/
 backend/build/
 backend/dist/
 frontend/node_modules/
 frontend/dist/
 frontend/.vite/
+.remote_cfg/
 .safety-project.ini
 .DS_Store
 Thumbs.db

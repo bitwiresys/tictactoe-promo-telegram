@@ -128,36 +128,8 @@ def upgrade() -> None:
         ),
     )
 
-    op.create_table(
-        "promo_issuance_limits",
-        sa.Column("id", postgresql.UUID(as_uuid=True), primary_key=True, nullable=False),
-        sa.Column("client_id", postgresql.UUID(as_uuid=True), nullable=False),
-        sa.Column("ip", sa.String(length=64), nullable=False),
-        sa.Column(
-            "issued_at", sa.DateTime(timezone=True), server_default=sa.text("now()"), nullable=False
-        ),
-    )
-    op.create_index(
-        "ix_promo_issuance_limits_client_id_issued_at",
-        "promo_issuance_limits",
-        ["client_id", "issued_at"],
-        unique=False,
-    )
-    op.create_index(
-        "ix_promo_issuance_limits_ip_issued_at",
-        "promo_issuance_limits",
-        ["ip", "issued_at"],
-        unique=False,
-    )
-
 
 def downgrade() -> None:
-    op.drop_index("ix_promo_issuance_limits_ip_issued_at", table_name="promo_issuance_limits")
-    op.drop_index(
-        "ix_promo_issuance_limits_client_id_issued_at", table_name="promo_issuance_limits"
-    )
-    op.drop_table("promo_issuance_limits")
-
     op.drop_table("idempotency_keys")
 
     op.drop_index("ix_outbox_events_next_retry_at", table_name="outbox_events")

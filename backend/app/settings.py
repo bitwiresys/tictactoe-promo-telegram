@@ -14,8 +14,6 @@ class Settings(BaseSettings):
     cors_origin_regex: str = Field(default="", alias="CORS_ORIGIN_REGEX")
     log_level: str = Field(default="info", alias="LOG_LEVEL")
 
-    promo_limits_enabled: bool = Field(default=True, alias="PROMO_LIMITS_ENABLED")
-
     telegram_bot_token: str = Field(default="", alias="TELEGRAM_BOT_TOKEN")
 
     outbox_batch_size: int = Field(default=10, alias="OUTBOX_BATCH_SIZE")

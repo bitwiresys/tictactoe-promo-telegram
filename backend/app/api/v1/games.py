@@ -25,13 +25,15 @@ from app.services.idempotency import (
     save_idempotent_response,
 )
 from app.services.outbox import enqueue_telegram_message
-from app.services.promo import acquire_promo_locks, issue_promo_code, promo_is_available
+from app.services.promo import issue_promo_code
 from app.settings import get_settings
 
 router = APIRouter()
 
 
-def _computer_move_with_mistake(board: str, computer_symbol: Symbol, player_symbol: Symbol) -> int | None:
+def _computer_move_with_mistake(
+    board: str, computer_symbol: Symbol, player_symbol: Symbol
+) -> int | None:
     best = best_computer_move(board, computer_symbol, player_symbol)
     if best is None:
         return None
@@ -61,16 +63,11 @@ def _client_ip(request: Request) -> str:
 @router.post("", response_model=GameStateResponse, status_code=status.HTTP_201_CREATED)
 async def create_game(
     body: CreateGameRequest,
-    request: Request,
-    x_client_id: uuid.UUID | None = Header(default=None, alias="X-Client-Id"),
+    _request: Request,
+    _x_client_id: uuid.UUID | None = Header(default=None, alias="X-Client-Id"),
     session: AsyncSession = Depends(get_db_session),
 ) -> GameStateResponse:
-    settings = get_settings()
     promo = PromoInfo(available=True, reason=None)
-    if settings.promo_limits_enabled and x_client_id is not None:
-        ip = _client_ip(request)
-        available, reason = await promo_is_available(session, client_id=x_client_id, ip=ip)
-        promo = PromoInfo(available=available, reason=reason)
 
     game = Game(
         status=GameStatus.in_progress,
@@ -130,7 +127,7 @@ async def get_game(
 
 @router.post("/{game_id}/moves", response_model=MoveResponse)
 async def make_move(
-    request: Request,
+    _request: Request,
     game_id: uuid.UUID,
     body: MoveRequest,
     idempotency_key: str = Header(alias="Idempotency-Key"),
@@ -139,7 +136,6 @@ async def make_move(
     session: AsyncSession = Depends(get_db_session),
 ) -> MoveResponse:
     settings = get_settings()
-    ip = _client_ip(request)
 
     request_hash = compute_request_hash(str(game_id), str(body.cell), str(x_client_id))
 
@@ -210,27 +206,11 @@ async def make_move(
             game.finished_at = datetime.now(timezone.utc)
 
         if game.status == GameStatus.player_won:
-            if settings.promo_limits_enabled:
-                await acquire_promo_locks(session, client_id=x_client_id, ip=ip)
-                available, reason = await promo_is_available(session, client_id=x_client_id, ip=ip)
-                promo = PromoInfo(available=available, reason=reason)
-                if available:
-                    promo_code, promo_id = await issue_promo_code(
-                        session, game_id=game.id, client_id=x_client_id, ip=ip
-                    )
-                    game.promo_code_id = promo_id
-            else:
-                promo_code, promo_id = await issue_promo_code(
-                    session, game_id=game.id, client_id=x_client_id, ip=ip
-                )
-                game.promo_code_id = promo_id
+            promo_code, promo_id = await issue_promo_code(session, game_id=game.id)
+            game.promo_code_id = promo_id
 
             if settings.telegram_bot_token and x_telegram_user_id:
-                text_msg = (
-                    f"Победа! Промокод выдан: {promo_code}"
-                    if promo_code is not None
-                    else "Победа! Промокод не выдан: daily_limit"
-                )
+                text_msg = f"Победа! Промокод выдан: {promo_code}"
                 await enqueue_telegram_message(
                     session,
                     dedupe_key=f"telegram:game:{game.id}:player_won",

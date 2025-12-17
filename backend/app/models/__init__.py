@@ -4,7 +4,6 @@ from app.models.game import Game
 from app.models.idempotency import IdempotencyKey
 from app.models.outbox import OutboxEvent
 from app.models.promo import PromoCode
-from app.models.promo_limits import PromoIssuanceLimit
 
 __all__ = [
     "Base",
@@ -14,6 +13,5 @@ __all__ = [
     "OutboxEvent",
     "OutboxStatus",
     "PromoCode",
-    "PromoIssuanceLimit",
     "Turn",
 ]

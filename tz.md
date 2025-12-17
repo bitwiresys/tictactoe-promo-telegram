@@ -157,19 +157,6 @@ Worker забирает пачку событий через `SELECT ... FOR UPD
 - Только при `status = player_won`
 - Генерация и запись промокода делаются **в транзакции** вместе с финализацией игры.
 
-### 6.3 Антиабуз (обязательная продуктовая защита, т.к. промокоды = деньги)
-Минимальный набор:
-- Лимит выдачи промокодов:
-  - 1 промокод на 24 часа на “анонимного пользователя” (cookie/session id) **и**
-  - 1 промокод на 24 часа на IP (мягко, чтобы не ломать офисы)
-- Технически:
-  - генерируем `client_id` (uuid) на фронте и храним в localStorage/cookie
-  - backend получает `client_id` в заголовке `X-Client-Id`
-  - сохраняем `client_id` + `ip` в отдельной таблице `promo_issuance_limits` (или в `promo_codes.meta`)
-- При превышении лимита: игра играться может, но промокод не выдаём, показываем сообщение “Промокоды на сегодня закончились” (это уже фронт; backend возвращает флаг).
-
-Если антиабуз в проекте нежелателен — оставить как feature flag `PROMO_LIMITS_ENABLED=true`.
-
 ---
 
 ## 7) Telegram: бизнес-логика и надёжность
@@ -221,13 +208,12 @@ Response 201:
   "promo": { "available": true, "reason": null }
 }
 ```
-`promo.available` учитывает лимиты.
 
 ### 8.2 Сделать ход
 `POST /games/{game_id}/moves`
 Headers:
 - `Idempotency-Key: <string>` (обязательный)
-- `X-Client-Id: <uuid>` (обязательный для антиабуза)
+- `X-Client-Id: <uuid>` (обязательный)
 
 Body:
 ```json
@@ -254,15 +240,6 @@ Response 200:
   "status": "player_won",
   "promo_code": "48391",
   "promo": { "available": true, "reason": null }
-}
-```
-
-Если промо лимит не позволяет выдачу:
-```json
-{
-  "status": "player_won",
-  "promo_code": null,
-  "promo": { "available": false, "reason": "daily_limit" }
 }
 ```
 

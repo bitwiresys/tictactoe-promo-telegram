@@ -55,7 +55,7 @@ async def _clean_db(app) -> None:
         async with session.begin():
             await session.execute(
                 text(
-                    "TRUNCATE TABLE outbox_events, promo_codes, promo_issuance_limits, idempotency_keys, games "
+                    "TRUNCATE TABLE outbox_events, promo_codes, idempotency_keys, games "
                     "RESTART IDENTITY CASCADE"
                 )
             )
