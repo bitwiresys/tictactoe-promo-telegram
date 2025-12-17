@@ -61,7 +61,6 @@ Web-игра «Крестики‑нолики» (игрок vs компьюте
 
 Для Telegram:
 - `TELEGRAM_BOT_TOKEN`
-- `TELEGRAM_CHAT_ID`
 
 Для worker:
 - `OUTBOX_BATCH_SIZE`
@@ -115,7 +114,7 @@ pytest
 - Добавь ENV в оба сервиса:
   - `DATABASE_URL` (asyncpg)
   - `ALEMBIC_DATABASE_URL` (psycopg2)
-  - `TELEGRAM_BOT_TOKEN`, `TELEGRAM_CHAT_ID` (по необходимости)
+  - `TELEGRAM_BOT_TOKEN` (по необходимости)
   - `PROMO_LIMITS_ENABLED=true`
 - Прогони миграции:
   - можно отдельным “one-off job” на Render: `alembic upgrade head`

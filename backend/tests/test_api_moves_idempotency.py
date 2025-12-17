@@ -55,11 +55,14 @@ async def test_player_win_issues_promo_and_creates_outbox(
 ) -> None:
     monkeypatch.setenv("PROMO_LIMITS_ENABLED", "false")
     monkeypatch.setenv("TELEGRAM_BOT_TOKEN", "token")
-    monkeypatch.setenv("TELEGRAM_CHAT_ID", "1")
 
     game_id = await _create_prefilled_game(app, board="XX.OO....")
 
-    headers = {"Idempotency-Key": "k3", "X-Client-Id": str(uuid.uuid4())}
+    headers = {
+        "Idempotency-Key": "k3",
+        "X-Client-Id": str(uuid.uuid4()),
+        "X-Telegram-User-Id": "1",
+    }
     r = await client.post(f"/api/v1/games/{game_id}/moves", json={"cell": 2}, headers=headers)
     assert r.status_code == 200
     data = r.json()

@@ -17,7 +17,6 @@ class Settings(BaseSettings):
     promo_limits_enabled: bool = Field(default=True, alias="PROMO_LIMITS_ENABLED")
 
     telegram_bot_token: str = Field(default="", alias="TELEGRAM_BOT_TOKEN")
-    telegram_chat_id: str = Field(default="", alias="TELEGRAM_CHAT_ID")
 
     outbox_batch_size: int = Field(default=10, alias="OUTBOX_BATCH_SIZE")
     outbox_poll_interval_seconds: float = Field(default=2.0, alias="OUTBOX_POLL_INTERVAL_SECONDS")

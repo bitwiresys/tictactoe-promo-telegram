@@ -135,6 +135,7 @@ async def make_move(
     body: MoveRequest,
     idempotency_key: str = Header(alias="Idempotency-Key"),
     x_client_id: uuid.UUID = Header(alias="X-Client-Id"),
+    x_telegram_user_id: str | None = Header(default=None, alias="X-Telegram-User-Id"),
     session: AsyncSession = Depends(get_db_session),
 ) -> MoveResponse:
     settings = get_settings()
@@ -224,7 +225,7 @@ async def make_move(
                 )
                 game.promo_code_id = promo_id
 
-            if settings.telegram_bot_token and settings.telegram_chat_id:
+            if settings.telegram_bot_token and x_telegram_user_id:
                 text_msg = (
                     f"Победа! Промокод выдан: {promo_code}"
                     if promo_code is not None
@@ -233,17 +234,17 @@ async def make_move(
                 await enqueue_telegram_message(
                     session,
                     dedupe_key=f"telegram:game:{game.id}:player_won",
-                    chat_id=settings.telegram_chat_id,
+                    chat_id=x_telegram_user_id,
                     text=text_msg,
                     metadata={"game_id": str(game.id)},
                 )
 
         if game.status == GameStatus.computer_won:
-            if settings.telegram_bot_token and settings.telegram_chat_id:
+            if settings.telegram_bot_token and x_telegram_user_id:
                 await enqueue_telegram_message(
                     session,
                     dedupe_key=f"telegram:game:{game.id}:computer_won",
-                    chat_id=settings.telegram_chat_id,
+                    chat_id=x_telegram_user_id,
                     text="Проигрыш",
                     metadata={"game_id": str(game.id)},
                 )

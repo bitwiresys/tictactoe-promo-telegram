@@ -31,7 +31,6 @@ jobs:
       CORS_ORIGINS: http://localhost:5173
       PROMO_LIMITS_ENABLED: "true"
       TELEGRAM_BOT_TOKEN: ""
-      TELEGRAM_CHAT_ID: ""
 
     steps:
       - uses: actions/checkout@v4

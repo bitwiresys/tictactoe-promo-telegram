@@ -32,11 +32,22 @@ function apiBaseUrl(): string {
   return (import.meta as any).env?.VITE_API_BASE_URL || 'http://localhost:8000'
 }
 
+function telegramUserId(): string | null {
+  const tg = (globalThis as any)?.Telegram?.WebApp
+  const id = tg?.initDataUnsafe?.user?.id
+  if (typeof id === 'number' || typeof id === 'string') {
+    return String(id)
+  }
+  return null
+}
+
 async function http<T>(path: string, init?: RequestInit): Promise<T> {
+  const tgUserId = telegramUserId()
   const res = await fetch(`${apiBaseUrl()}${path}`, {
     ...init,
     headers: {
       'Content-Type': 'application/json',
+      ...(tgUserId ? { 'X-Telegram-User-Id': tgUserId } : {}),
       ...(init?.headers || {}),
     },
   })
