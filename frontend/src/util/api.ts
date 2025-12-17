@@ -32,13 +32,44 @@ function apiBaseUrl(): string {
   return (import.meta as any).env?.VITE_API_BASE_URL || 'http://localhost:8000'
 }
 
-function telegramUserId(): string | null {
-  const tg = (globalThis as any)?.Telegram?.WebApp
-  const id = tg?.initDataUnsafe?.user?.id
+function _tgWebApp(): any {
+  return (globalThis as any)?.Telegram?.WebApp
+}
+
+function _stringifyId(id: unknown): string | null {
   if (typeof id === 'number' || typeof id === 'string') {
     return String(id)
   }
   return null
+}
+
+function _telegramUserIdFromUrl(): string | null {
+  try {
+    const hash = typeof window !== 'undefined' ? window.location.hash : ''
+    const search = typeof window !== 'undefined' ? window.location.search : ''
+
+    const hashParams = new URLSearchParams(hash.startsWith('#') ? hash.slice(1) : hash)
+    const searchParams = new URLSearchParams(search.startsWith('?') ? search.slice(1) : search)
+
+    const raw = hashParams.get('tgWebAppData') || searchParams.get('tgWebAppData')
+    if (!raw) return null
+
+    const decoded = decodeURIComponent(raw)
+    const initData = new URLSearchParams(decoded)
+    const userJson = initData.get('user')
+    if (!userJson) return null
+
+    const user = JSON.parse(userJson)
+    return _stringifyId(user?.id)
+  } catch {
+    return null
+  }
+}
+
+function telegramUserId(): string | null {
+  const tg = _tgWebApp()
+  const id = tg?.initDataUnsafe?.user?.id
+  return _stringifyId(id) || _telegramUserIdFromUrl()
 }
 
 async function http<T>(path: string, init?: RequestInit): Promise<T> {

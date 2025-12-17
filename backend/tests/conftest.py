@@ -38,6 +38,32 @@ def _migrate_db() -> None:
 async def app():
     app = create_app()
     async with LifespanManager(app):
+        sessionmaker = app.state.sessionmaker
+        async with sessionmaker() as session:
+            async with session.begin():
+                await session.execute(
+                    text(
+                        "TRUNCATE TABLE outbox_events, promo_codes, idempotency_keys, games "
+                        "RESTART IDENTITY CASCADE"
+                    )
+                )
+        yield app
+
+
+@pytest_asyncio.fixture()
+async def app_with_telegram(monkeypatch):
+    monkeypatch.setenv("TELEGRAM_BOT_TOKEN", "token")
+    app = create_app()
+    async with LifespanManager(app):
+        sessionmaker = app.state.sessionmaker
+        async with sessionmaker() as session:
+            async with session.begin():
+                await session.execute(
+                    text(
+                        "TRUNCATE TABLE outbox_events, promo_codes, idempotency_keys, games "
+                        "RESTART IDENTITY CASCADE"
+                    )
+                )
         yield app
 
 
@@ -48,14 +74,8 @@ async def client(app):
         yield c
 
 
-@pytest_asyncio.fixture(autouse=True)
-async def _clean_db(app) -> None:
-    sessionmaker = app.state.sessionmaker
-    async with sessionmaker() as session:
-        async with session.begin():
-            await session.execute(
-                text(
-                    "TRUNCATE TABLE outbox_events, promo_codes, idempotency_keys, games "
-                    "RESTART IDENTITY CASCADE"
-                )
-            )
+@pytest_asyncio.fixture()
+async def client_with_telegram(app_with_telegram):
+    transport = ASGITransport(app=app_with_telegram)
+    async with AsyncClient(transport=transport, base_url="http://test") as c:
+        yield c

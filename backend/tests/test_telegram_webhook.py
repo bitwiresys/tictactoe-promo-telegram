@@ -6,8 +6,7 @@ from sqlalchemy import select
 from app.models import OutboxEvent
 
 
-async def test_telegram_start_creates_outbox(app, client: AsyncClient, monkeypatch) -> None:
-    monkeypatch.setenv("TELEGRAM_BOT_TOKEN", "token")
+async def test_telegram_start_creates_outbox(app_with_telegram, client_with_telegram: AsyncClient) -> None:
 
     payload = {
         "update_id": 1,
@@ -18,11 +17,11 @@ async def test_telegram_start_creates_outbox(app, client: AsyncClient, monkeypat
         },
     }
 
-    r = await client.post("/api/v1/telegram/webhook", json=payload)
+    r = await client_with_telegram.post("/api/v1/telegram/webhook", json=payload)
     assert r.status_code == 200
     assert r.json() == {"ok": True}
 
-    sessionmaker = app.state.sessionmaker
+    sessionmaker = app_with_telegram.state.sessionmaker
     async with sessionmaker() as session:
         outbox = await session.execute(
             select(OutboxEvent).where(OutboxEvent.dedupe_key == "telegram:webhook:1:start")

@@ -51,31 +51,65 @@ async def test_idempotency_reuse_with_different_payload_is_409(app, client: Asyn
 
 
 async def test_player_win_issues_promo_and_creates_outbox(
-    app, client: AsyncClient, monkeypatch
+    app_with_telegram, client_with_telegram: AsyncClient
 ) -> None:
-    monkeypatch.setenv("TELEGRAM_BOT_TOKEN", "token")
-
-    game_id = await _create_prefilled_game(app, board="XX.OO....")
+    game_id = await _create_prefilled_game(app_with_telegram, board="XX.OO....")
 
     headers = {
         "Idempotency-Key": "k3",
         "X-Client-Id": str(uuid.uuid4()),
         "X-Telegram-User-Id": "1",
     }
-    r = await client.post(f"/api/v1/games/{game_id}/moves", json={"cell": 2}, headers=headers)
+    r = await client_with_telegram.post(
+        f"/api/v1/games/{game_id}/moves", json={"cell": 2}, headers=headers
+    )
     assert r.status_code == 200
     data = r.json()
     assert data["status"] == "player_won"
     assert data["promo_code"] is not None
+    promo_code = data["promo_code"]
 
-    sessionmaker = app.state.sessionmaker
+    sessionmaker = app_with_telegram.state.sessionmaker
     async with sessionmaker() as session:
         outbox = await session.execute(
             select(OutboxEvent).where(
                 OutboxEvent.dedupe_key == f"telegram:game:{game_id}:player_won"
             )
         )
-        assert outbox.scalar_one_or_none() is not None
+        ev = outbox.scalar_one_or_none()
+        assert ev is not None
+        assert ev.payload.get("text") == f"Победа! Промокод выдан: {promo_code}"
+
+
+async def test_computer_win_creates_outbox(
+    app_with_telegram, client_with_telegram: AsyncClient, monkeypatch
+) -> None:
+    monkeypatch.setattr("random.random", lambda: 1.0)
+
+    game_id = await _create_prefilled_game(app_with_telegram, board="OO.XX....")
+
+    headers = {
+        "Idempotency-Key": "k4",
+        "X-Client-Id": str(uuid.uuid4()),
+        "X-Telegram-User-Id": "1",
+    }
+    r = await client_with_telegram.post(
+        f"/api/v1/games/{game_id}/moves", json={"cell": 8}, headers=headers
+    )
+    assert r.status_code == 200
+    data = r.json()
+    assert data["status"] == "computer_won"
+
+    sessionmaker = app_with_telegram.state.sessionmaker
+    async with sessionmaker() as session:
+        outbox = await session.execute(
+            select(OutboxEvent).where(
+                OutboxEvent.dedupe_key == f"telegram:game:{game_id}:computer_won"
+            )
+        )
+        ev = outbox.scalar_one_or_none()
+        assert ev is not None
+        assert ev.payload.get("text") == "Проигрыш"
 
 
 async def test_promo_daily_limit_blocks_second_code_same_client(app, client: AsyncClient) -> None:

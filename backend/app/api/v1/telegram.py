@@ -63,12 +63,13 @@ async def telegram_webhook(
     else:
         dedupe_key = f"telegram:webhook:{uuid.uuid4()}:start"
 
-    await enqueue_telegram_message(
-        session,
-        dedupe_key=dedupe_key,
-        chat_id=chat_id,
-        text="Привет! Игра запущена. Открой мини-приложение и сыграй в крестики-нолики.",
-        metadata={"command": "start"},
-    )
+    async with session.begin():
+        await enqueue_telegram_message(
+            session,
+            dedupe_key=dedupe_key,
+            chat_id=chat_id,
+            text="Привет! Игра запущена. Открой мини-приложение и сыграй в крестики-нолики.",
+            metadata={"command": "start"},
+        )
 
     return {"ok": True}
